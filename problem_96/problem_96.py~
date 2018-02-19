@@ -1,0 +1,113 @@
+from random import sample, shuffle
+
+def cross(A, B):
+    return [a + b for a in A for b in B]
+
+def chunks(A, k):
+    return [A[n:n+k] for n in xrange(0, len(A), k)]    
+    
+def get_neighbors(square, units):
+    neighbors = set()
+    for unit in units:
+        if square in unit:
+            neighbors |= set(unit)
+    neighbors.remove(square)
+    return neighbors
+
+f = open("p096_sudoku.txt", "r")
+
+rows = 'ABCDEFGHI'
+cols = '123456789'
+digits = cols
+grid = cross(rows, cols)
+units = [cross(r, cols) for r in rows] + \
+        [cross(rows, c) for c in cols] + \
+        [cross(r, c) for r in chunks(rows, 3) for c in chunks(cols, 3)]
+neighbors = dict([(square, get_neighbors(square, units)) for square in grid])
+
+def load_values(f, grid):
+    unsolveds = []
+    values = []
+    value = ''
+    for line in f:
+        if len(line) == 10:
+            value += line[:-1]
+        elif len(line) == 9:
+            value += line
+        if value != '' and len(line) < 10:
+            values.append(dict(zip(grid, value)))
+            value = ''
+    for value in values:
+        for square in grid:
+            value[square] = set(value[square])
+    for value in values:
+        unsolved = list()
+        for square in grid:
+            if '0' in value[square]:
+                value[square] = set(digits)
+                unsolved.append(square)
+        unsolveds.append(list(reversed(sorted(unsolved))))
+    return values, unsolveds
+
+def simplify(value, unsolved, neighbors):
+    found = 1
+    while found == 1 and unsolved:
+        found = 0
+        for square in list(unsolved):
+            for neighbor in neighbors[square]:
+                n_set = value[neighbor]
+                if len(n_set) == 1:
+                    value[square] -= n_set
+            length = len(value[square])
+            if length == 1:
+                unsolved.remove(square)
+                found = 1
+            elif length == 0:
+                return 2
+    return found 
+
+def solve(value, unsolved, neighbors):
+    res = simplify(value, unsolved, neighbors)
+    if res > 0:
+        return not bool(res-1)
+    else:
+        value_old = dict([(square, set(value[square])) for square in unsolved])
+        square = unsolved.pop()
+        unsolved_old = list(unsolved)
+        for guess in sorted(value[square]):
+            value[square] = set(guess)
+            solved = solve(value, unsolved, neighbors)
+            if solved:
+                return True
+            value.update(value_old)
+            unsolved = unsolved_old
+    raise ValueError()
+        
+def display(value, unsolved=None):
+    empty = ' '
+    numbers = '    1 2 3   4 5 6   7 8 9  '
+    letters = [c for c in 'IHGFEDCBA']
+    line = '  +-------+-------+-------+'
+    array = [set(value[s]).pop() if len(value[s]) == 1 else empty for s in sorted(value)]
+    cnt = 0
+    print numbers
+    for row in chunks(array, 9):
+        if cnt % 3 == 0:
+            print line
+        print letters.pop() + ' | ' + ' | '.join([' '.join(sec) for sec in chunks(row, 3)]) + ' |'
+        cnt += 1
+    print line
+    if unsolved:
+        print
+        print 'Unsolved:'
+        for square in sorted(unsolved):
+            print square, 'in {'+', '.join(sorted(value[square]))+'}'
+           
+values, unsolveds = load_values(f, grid)
+
+for s in range(0, 50):
+    print 'Grid #' + str(s) + ':'
+    print 'Solved:', solve(values[s], unsolveds[s], neighbors)
+    display(values[s], unsolveds[s])
+    print
+
