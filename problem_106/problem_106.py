@@ -1,18 +1,16 @@
-import itertools as it
+from itertools import combinations
 from time import time
-
-def le(l):
-  for a,b in l:
-    if a >= b:
+  
+def le(a,b):
+  for n,m in zip(a,b):
+    if n >= m:
       return False
   return True
 
 start = time()
 n = 12
-start_set = range(1, n+1)
-subsets = [set(comb) for m in start_set for comb in it.combinations(start_set, m)]
-subset_pairs = [(sorted(list(a)),sorted(list(b))) for a,b in it.combinations(subsets, 2) if not a & b]
-results = [(a,b) for a,b in subset_pairs if len(a) > 1 and len(a) == len(b) and not le(zip(a,b))]
+N = range(1, n+1)
+pairs = (combinations((c for c in combinations(N, k)), 2) for k in N[1:n/2])
+results = [(a,b) for seq in pairs for a,b in seq if not (set(a) & set(b) or le(a,b))]
 
 print len(results), time()-start
-
