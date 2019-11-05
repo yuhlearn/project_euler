@@ -61,18 +61,19 @@ def arrange(filtered):
     return arranged
 
 def recurse(arranged):
-    combs = dict()
+    sets = dict()
 
     for i in range(1, 10):
-        combs[i] = [[n] for n in arranged[i]]
-        for j in range(1, int(i/2.) + 1):
-            k = i-j
-            for a, b in prod(combs[j], combs[k]):
+        temp_set = {(n,) for n in arranged[i]}
+        for j in range(1, i/2 + 1):
+            k = i - j
+            for a, b in prod(sets[j], sets[k]):
                 flat = a + b
                 if len(set(''.join(flat))) == i:
-                    combs[i].append(flat)
+                    temp_set.add(tuple(sorted(flat)))
+        sets[i] = temp_set
 
-    return combs
+    return sets
 
 start = time()
 digits = '123456789'
@@ -81,7 +82,7 @@ filtered = filter_numbers(numbers)
 arranged = arrange(filtered)
 recursed = recurse(arranged)
 
-result = len({tuple(sorted(x)) for x in recursed[9]})
+result = len(recursed[9])
 
-print time() - start, result
+print time() - start, result # 44680
 
